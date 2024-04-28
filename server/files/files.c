@@ -20,7 +20,7 @@ char* serveFileFromURL(URL url){
 
 
 
-char* openFile(char* url){
+char* openPage(char* url){
     FILE* fp = fopen(url, "r");
     if(fp == NULL){
         return NULL;
@@ -36,66 +36,78 @@ char* openFile(char* url){
 }
 
 
-void rawFilesAppend(RawFiles* rawFiles, char* content, int length){
-    RawFile* rawfile = (RawFile*) malloc(sizeof (RawFile));
+void appendPage(Pages* pages, char* content, int length, char* name){
+    Page* rawfile = (Page*) malloc(sizeof (Page));
     rawfile->content = content;
+    rawfile->name = strdup(name);
     rawfile->length = length;
-    rawFiles->postfiles[rawFiles->postCount++] = rawfile;
-    if(rawFiles->postCount * sizeof(RawFile) > rawFiles->bufferSize){
-        rawFiles->postfiles = realloc(rawFiles->postfiles, rawFiles->bufferSize * 2);
+    pages->pageFiles[pages->pageCount++] = rawfile;
+    if(pages->pageCount * sizeof(Page) > pages->bufferSize){
+        pages->pageFiles = realloc(pages->pageFiles, pages->bufferSize * 2);
     }
 }
 
-RawFiles* initRawFiles(int initalSize){
-    initalSize *= sizeof(RawFile);
-    RawFiles* postFiles = (RawFiles*) malloc(sizeof(RawFiles));
-    postFiles->postfiles = malloc(initalSize);
-    postFiles->bufferSize = initalSize;
-    postFiles->postCount = 0;
+Pages* initPages(int initialSize){
+    initialSize *= sizeof(Page);
+    Pages* postFiles = (Pages*) malloc(sizeof(Pages));
+    postFiles->pageFiles = malloc(initialSize);
+    postFiles->bufferSize = initialSize;
+    postFiles->pageCount = 0;
     return postFiles;
 }
 
-RawFiles* loadRawFiles(){
-    DIR *directory;
-    struct dirent *entry;
-    directory = opendir("../../posts");
+Page* findPage(Pages* pages, char* name){
+    for (int i = 0; i < pages->pageCount; ++i) {
+        Page* page = pages->pageFiles[i];
+        if(strcmp(page->name, name) == 0){
+            return page;
+        }
+    }
+    return NULL;
+}
+
+void destroyPage(Page* page){
+    free(page->content);
+    free(page->name);
+    free(page);
+}
+
+
+Pages* loadPages(char* basePath){
+    DIR* directory = opendir(HTMLPATH);
     if (directory == NULL) {
         perror("Unable to open directory");
         return NULL;
     }
-
-    RawFiles* rawFiles = initRawFiles(10);
-
+    Pages* pages = initPages(10);
     int fileCount = 0;
-    char basePath[] = "../../posts/";
-    int baseLen = strlen(basePath);
-    char* path = (char*) malloc(baseLen);
-    strcpy(path, basePath);
+    struct dirent *entry;
     while ((entry = readdir(directory)) != NULL) {
         // Filter out "." and ".." entries
         if (entry->d_type == DT_REG) {
+            int baseLen = strlen(basePath);
+            char* path = (char*) malloc(baseLen + strlen(entry->d_name) + 1);
+            strcpy(path, basePath);
             strcpy(path + baseLen, entry->d_name);
             FILE* file = fopen(path, "r");
+            free(path);
             if (file == NULL) {
-                perror("Error opening file");
+                perror("[ERROR] File not found");
                 return NULL;
             }
             fseek(file,0, SEEK_END);
             int fileLength = (int) ftell(file);
             fseek(file,0,SEEK_SET);
-            printf("Opened %s of size %d\n", path, fileLength);
-            char* fileContent = (char*) malloc(fileLength);
+            char* fileContent = (char*) malloc(fileLength + 1);
             fread(fileContent,1,fileLength,file);
-            printf("%s\n\n",fileContent);
-            rawFilesAppend(rawFiles, fileContent, fileLength);
+            appendPage(pages, fileContent, fileLength, entry->d_name);
             fclose(file);
+            printf("[INFO] Loaded %s of size %d\n", entry->d_name, fileLength);
             fileCount++;
         }
     }
 
-    printf("Content\n%s\n", rawFiles->postfiles[1]->content);
-    free(path);
     // Close the directory
     closedir(directory);
-    return rawFiles;
+    return pages;
 }

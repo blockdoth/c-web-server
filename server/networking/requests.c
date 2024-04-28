@@ -21,23 +21,23 @@ Extension parseExtension(char* url){
         return NVT;
     }
     char* extension = getExtension(url);
+    Extension ext = NVT;
     if(strcmp(extension, ".html") == 0){
-        return HTML;
+        ext = HTML;
     }else if(strcmp(extension, ".css") == 0){
-        return CSS;
+        ext = CSS;
     }else if(strcmp(extension, ".txt") == 0){
-        return TXT;
+        ext = TXT;
     }else if(strcmp(extension, ".md") == 0){
-        return MD;
+        ext = MD;
     }else if(strcmp(extension, ".ico") == 0){
-        return ICO;
-    } else{
-        return NVT;
+        ext = ICO;
     }
+    free(extension);
+    return ext;
 }
 
 URL parseURL(char* buffer){
-
     while(*buffer != ' ' && *buffer != '\0'){
         buffer++;
     }

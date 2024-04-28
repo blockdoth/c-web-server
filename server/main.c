@@ -8,25 +8,26 @@
 #include "stdbool.h"
 #include <unistd.h>
 
-#include "files.h"
-#include "requests.h"
-#include "IO.h"
+#include "files/files.h"
+#include "networking/requests.h"
+#include "networking/IO.h"
 
 
 typedef struct {
     int requestId;
-} PThreadArgs;
+    Pages* pages;
+} ThreadArgs;
 
 
 #define REQUEST_BUFFER_SIZE 10000
 void* handleRequest(void* arg){
-    PThreadArgs* threadArgs = (PThreadArgs*) arg;
+    ThreadArgs* threadArgs = (ThreadArgs*) arg;
 
     char* buffer = (char*) malloc(REQUEST_BUFFER_SIZE);
     ssize_t bytesReceived = recv(threadArgs->requestId, buffer, REQUEST_BUFFER_SIZE, 0);
     printf(" ├─[INFO] Bytes received\t%zd\n",bytesReceived);
     if(bytesReceived > 0){
-        printf("%s", buffer);
+        //printf("%s", buffer);
         Request request = parseRequest(buffer);
         printRequest(request);
         if(request.extension == ICO){
@@ -42,21 +43,16 @@ void* handleRequest(void* arg){
 //                    printf("%s\n", chunk);
 //                }
                 {
-                    char* path = (char*) malloc(strlen(request.url.url) + 6);
-                    strcpy(path, "../../");
-                    strcat(path, request.url.url);
-                    char* file = openFile(path);
-                    free(path);
-                    if(file == NULL){
-                        printf(" ├─[ERROR] Could not find file \"%s\"\n", request.url.url);
-                        free(file);
+                    Page* page = findPage(threadArgs->pages, request.url.url);
+                    if(page == NULL){
+                        printf(" ├─[ERROR] File not found\n");
                         goto cleanUp;
                     }
-                    char* response = sendResponse(file);
+                    char* response = buildResponse(page);
+                    //printf("%s", response);
                     send(threadArgs->requestId, response, strlen(response),0);
                     printf(" ├─[INFO] Send response\n");
                     free(response);
-                    free(file);
                     break;
                 }
                 default:
@@ -76,9 +72,11 @@ void* handleRequest(void* arg){
 
 #define PORT 8080
 int main() {
-    //RawFiles* rawFiles = loadRawFiles();
-    int socketFD;
+    Pages* pages = loadPages(HTMLPATH);
+    printf("[INFO] Loaded %u pages\n", pages->pageCount);
 
+
+    int socketFD;
     printf("[INFO] Starting socket\n");
     if((socketFD = socket(AF_INET, SOCK_STREAM, 0)) < 0){
         perror("[ERROR] Starting socket failed\n");
@@ -110,14 +108,15 @@ int main() {
 
     while (true){
         int requestId;
-        PThreadArgs* threadArgs = (PThreadArgs*) malloc(sizeof(threadArgs));
+        pthread_t threadId;
+        ThreadArgs* threadArgs = (ThreadArgs*) malloc(sizeof(ThreadArgs));
 
         if((requestId = accept(socketFD, (struct sockaddr *)&socketAddr, &socketAddrLen)) < 0){
             perror("[ERROR] Failed to accept\n");
             continue;
         }
         threadArgs->requestId = requestId;
-        pthread_t threadId;
+        threadArgs->pages = pages;
         printf("[INFO] Request handler added\n");
         pthread_create(&threadId, NULL, handleRequest, threadArgs);
         pthread_detach(threadId);

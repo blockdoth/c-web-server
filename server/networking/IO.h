@@ -4,6 +4,8 @@
 #include "string.h"
 #include "malloc.h"
 #include "stdio.h"
-char* sendResponse(const char* body);
+#include "../files/files.h"
+
+char* buildResponse(Page* body);
 
 #endif //WEBSITE_IO_H

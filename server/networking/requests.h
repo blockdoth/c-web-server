@@ -36,6 +36,8 @@ typedef struct {
 } Request;
 
 
+
+
 //char* getExtension(const char* path);
 //Extension parseExtension(char* url);
 //URL parseURL(char* buffer);
@@ -46,5 +48,5 @@ Request parseRequest(char* buffer);
 char* match(const char* buffer, const char* pattern);
 void destroyRequest(Request request);
 void printRequest(Request request);
-
+void destroyRequest(Request request);
 #endif //WEBSITE_REQUESTS_H
