@@ -6,6 +6,6 @@
 #include "stdio.h"
 #include "../files/files.h"
 
-char* buildResponse(Page* body);
 
+char* buildResponse(char* body);
 #endif //WEBSITE_IO_H

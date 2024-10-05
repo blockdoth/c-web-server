@@ -1,9 +1,9 @@
 #include "IO.h"
 
-char* buildResponse(Page* body){
+char* buildResponse(char* body){
     char* header = "HTTP/1.1 200 OK\r\nContent-type: text/html\r\n\r\n";
-    int bodyLen = strlen(header) + body->length + 1;
+    int bodyLen = strlen(header) + strlen(body) + 1;
     char* response = (char*) malloc(bodyLen);
-    snprintf(response, bodyLen, "%s%s", header, body->content);
+    snprintf(response, bodyLen, "%s%s", header, body);
     return response;
 }

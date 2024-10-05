@@ -56,6 +56,33 @@ Pages* initPages(int initialSize){
     return postFiles;
 }
 
+
+char* replaceLinks(Page* page, char** links, int linkCount){
+    char* content = page->content;
+    int totalLinkLen = 0;
+    for (int i = 0; i < linkCount; ++i) {
+        totalLinkLen += strlen(links[i]);
+    }
+
+
+    char* replacedContent = malloc(strlen(content) + totalLinkLen + 1);
+    int linkIndex = 0;
+    char linkStart[] = "href=\"";
+    int linkStartLen = strlen(linkStart);
+
+    int writeIndex = 0;
+    int readIndex = 0;
+    for (int i = 0; i < strlen(content); ++i) {
+        if(strncmp(&content[i], linkStart, linkStartLen) == 0){
+            strncpy(&replacedContent[writeIndex], &content[readIndex],i);
+            writeIndex+= i + linkStartLen;
+             
+            char* link = links[linkIndex++];
+            strncpy(&replacedContent[writeIndex],link , strlen(link));
+        }
+    }
+}
+
 Page* findPage(Pages* pages, char* name){
     for (int i = 0; i < pages->pageCount; ++i) {
         Page* page = pages->pageFiles[i];
@@ -90,6 +117,7 @@ Pages* loadPages(char* basePath){
             strcpy(path, basePath);
             strcpy(path + baseLen, entry->d_name);
             FILE* file = fopen(path, "r");
+            //printf("%s\n", path);
             free(path);
             if (file == NULL) {
                 perror("[ERROR] File not found");

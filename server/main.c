@@ -8,6 +8,7 @@
 #include "stdbool.h"
 #include <unistd.h>
 
+#include "networking/endpoints.h"
 #include "files/files.h"
 #include "networking/requests.h"
 #include "networking/IO.h"
@@ -18,6 +19,11 @@ typedef struct {
     Pages* pages;
 } ThreadArgs;
 
+//Page* page = findPage(threadArgs->pages, request.url.url);
+//if(page == NULL){
+//printf(" ├─[ERROR] File not found\n");
+//goto cleanUp;
+//}
 
 #define REQUEST_BUFFER_SIZE 10000
 void* handleRequest(void* arg){
@@ -36,29 +42,13 @@ void* handleRequest(void* arg){
             printf(" ├─[ERROR] No path specified, no base yet\n");
         }
         else {
-            switch (request.requestType) {
-                case GET:
-//                for (int i = 0; i < request.url.depth; ++i) {
-//                    char* chunk = getURLChunk(request.url, i);
-//                    printf("%s\n", chunk);
-//                }
-                {
-                    Page* page = findPage(threadArgs->pages, request.url.url);
-                    if(page == NULL){
-                        printf(" ├─[ERROR] File not found\n");
-                        goto cleanUp;
-                    }
-                    char* response = buildResponse(page);
-                    //printf("%s", response);
-                    send(threadArgs->requestId, response, strlen(response),0);
-                    printf(" ├─[INFO] Send response\n");
-                    free(response);
-                    break;
-                }
-                default:
-            }
+            char* page = callEndpoint(request);
+            char* response = buildResponse(page);
+            send(threadArgs->requestId, response, strlen(response),0);
+            free(page);
+            free(response);
+            printf(" ├─[INFO] Send response\n");
         }
-        cleanUp:
         destroyRequest(request);
     }
     close(threadArgs->requestId);
@@ -75,6 +65,15 @@ int main() {
     Pages* pages = loadPages(HTMLPATH);
     printf("[INFO] Loaded %u pages\n", pages->pageCount);
 
+    char** links = (char**) malloc(sizeof(char*) * 2);
+    links[0] = "hello world";
+    links[1] = "test test";
+    char* test = replaceLinks(pages->pageFiles[0],links, 2);
+    printf("%s", test);
+//    for (int i = 0; i < ; ++i) {
+//
+//        addEndpoint(GET, ,);
+//    }
 
     int socketFD;
     printf("[INFO] Starting socket\n");

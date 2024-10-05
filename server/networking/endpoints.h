@@ -8,14 +8,12 @@
 typedef struct {
     char* path;
     REQUEST_TYPE type;
-    void(*endpoint)(Request request);
+    char*(*endpoint)(Request request);
 } Endpoint;
 
-Endpoint* endpoints[MAX_ENDPOINTS];
-int endpointPointer = 0;
 
-void addEndpoint(REQUEST_TYPE type, char* path, void(*endpoint)(Request request));
-
+void addEndpoint(REQUEST_TYPE type, char* path, char*(*endpoint)(Request request));
+char* callEndpoint(Request request);
 void destroyEndpoints();
 
 #endif //WEBSITE_ENDPOINTS_H

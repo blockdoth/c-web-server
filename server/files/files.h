@@ -21,6 +21,7 @@ typedef struct {
     int pageCount;
     int bufferSize;
 } Pages;
+char* replaceLinks(Page* page, char** links, int linkCount);
 
 void appendPage(Pages* pages, char* content, int length, char* name);
 Pages* initPages(int initialSize);
