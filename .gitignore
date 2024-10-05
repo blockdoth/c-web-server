@@ -1,3 +1,10 @@
 .idea
 website/node_modules
 src/cmake-build-debug
+.direnv
+.envrc
+server/main
+server/Makefile
+server/cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/

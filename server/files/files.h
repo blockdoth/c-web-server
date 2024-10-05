@@ -7,7 +7,7 @@
 
 #include "../networking/requests.h"
 
-#define HTMLPATH "../../website/pages/"
+#define HTMLPATH "../website/pages/"
 #define RESOURCESPATH "../../website/resources/"
 
 typedef struct {
